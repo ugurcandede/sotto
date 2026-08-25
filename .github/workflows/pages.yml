@@ -26,6 +26,7 @@ jobs:
       # its source directory, so they are copied in at build time.
       - name: Stage images
         run: |
+          mkdir -p docs/assets/images
           cp screenshots/*.png docs/assets/images/
           cp assets/icon.png docs/assets/images/
           cp assets/favicon.png docs/favicon.png
