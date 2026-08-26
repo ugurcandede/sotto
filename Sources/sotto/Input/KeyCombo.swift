@@ -29,6 +29,12 @@ struct KeyCombo: Codable, Equatable {
         105, 107, 113, 106, 64, 79, 80, 90,
     ]
 
+    /// A bare letter would swallow typing, so it needs a modifier. Function
+    /// keys stand alone, and hold mode also accepts a bare modifier.
+    func isBindable(allowingBareModifier: Bool) -> Bool {
+        !flags.isEmpty || isFunctionKey || (allowingBareModifier && isModifierKey)
+    }
+
     /// Left/right modifiers are indistinguishable in `CGEventFlags`' device
     /// independent bits, so hold detection uses the device-dependent mask.
     var deviceMask: UInt64? { ModifierKey(keyCode: keyCode)?.deviceMask }

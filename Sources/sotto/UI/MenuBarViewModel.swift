@@ -35,7 +35,7 @@ final class MenuBarViewModel: ObservableObject {
 
     @Published var launchAtLogin = SMAppService.mainApp.status == .enabled { didSet { applyLaunchAtLogin() } }
 
-    private let coordinator = MuteCoordinator()
+    private let coordinator = MuteCoordinator(audio: AudioController())
     private let toggleHotkey = ToggleHotkey()
     private let holdMonitor = HoldMonitor()
     private let hud = HUDController()

@@ -64,7 +64,7 @@ final class LevelMeter: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: item)
     }
 
-    private nonisolated static func normalizedLevel(_ buffer: AVAudioPCMBuffer) -> Float {
+    nonisolated static func normalizedLevel(_ buffer: AVAudioPCMBuffer) -> Float {
         guard let channel = buffer.floatChannelData?[0] else { return 0 }
         let count = Int(buffer.frameLength)
         guard count > 0 else { return 0 }
