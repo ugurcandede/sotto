@@ -1,8 +1,12 @@
 import SwiftUI
 
 struct AboutSection: View {
+    private var releaseURL: URL {
+        URL(string: "https://github.com/ugurcandede/sotto/releases/tag/v\(version)")!
+    }
+
     private var version: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ".dev"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
     }
 
     var body: some View {
@@ -31,7 +35,7 @@ struct AboutSection: View {
                     .font(.system(size: 10))
                     .foregroundColor(.secondary.opacity(0.3))
 
-                Link(destination: URL(string: "https://ugurcandede.github.io/sotto")!) {
+                Link(destination: releaseURL) {
                     HStack(spacing: 3) {
                         Image(systemName: "tag")
                             .font(.system(size: 8))

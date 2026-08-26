@@ -51,7 +51,13 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         viewModel.refreshOnOpen()
         NSApp.activate(ignoringOtherApps: true)
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        popover.contentViewController?.view.window?.makeKey()
+
+        let window = popover.contentViewController?.view.window
+        window?.makeKey()
+        // Becoming key hands first responder to the first control in the key
+        // view loop, which draws a focus ring on the Mute button. Nothing in
+        // the popover wants focus until it is clicked.
+        window?.makeFirstResponder(nil)
     }
 
     func popoverDidClose(_ notification: Notification) {

@@ -6,6 +6,10 @@ on:
     paths-ignore:
       - '**.md'
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   build-and-release:
     runs-on: macos-15
@@ -25,12 +29,18 @@ jobs:
           MINOR=$(echo "$LATEST" | sed 's/v//' | cut -d. -f2)
           PATCH=$(echo "$LATEST" | sed 's/v//' | cut -d. -f3)
 
-          # Semantic versioning from commit message prefix
-          # BREAKING: or bump: → major, feat: → minor, default → patch
-          MSG=$(git log -1 --pretty=%s)
-          if echo "$MSG" | grep -qiE '^(BREAKING|bump):'; then
+          # Semantic versioning from commit message prefixes across every commit
+          # in this push. BREAKING: or bump: → major, feat: → minor, default → patch
+          BEFORE="${{ github.event.before }}"
+          if git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            MSGS=$(git log --pretty=%s "${BEFORE}..${{ github.sha }}")
+          else
+            MSGS=$(git log -1 --pretty=%s)
+          fi
+
+          if echo "$MSGS" | grep -qiE '^(BREAKING|bump):'; then
             MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0
-          elif echo "$MSG" | grep -qi '^feat:'; then
+          elif echo "$MSGS" | grep -qi '^feat:'; then
             MINOR=$((MINOR + 1)); PATCH=0
           else
             PATCH=$((PATCH + 1))
@@ -40,12 +50,15 @@ jobs:
           VERSION="${MAJOR}.${MINOR}.${PATCH}"
           echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "New version: $NEW_TAG (from: $MSG)"
+          echo "New version: $NEW_TAG (from: $MSGS)"
 
       - name: Inject version into Info.plist
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          sed -i '' "s|<string>0.1.0</string>|<string>${VERSION}</string>|g" Resources/Info.plist
+          /usr/libexec/PlistBuddy \
+            -c "Set :CFBundleShortVersionString ${VERSION}" \
+            -c "Set :CFBundleVersion ${VERSION}" \
+            Resources/Info.plist
 
       - name: Build arm64
         run: swift build -c release --arch arm64

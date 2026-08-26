@@ -17,6 +17,14 @@ mkdir -p "${BUNDLE_DIR}/Contents/Resources"
 cp "${BINARY_PATH}" "${BUNDLE_DIR}/Contents/MacOS/sotto"
 cp "${PLIST_SRC}" "${BUNDLE_DIR}/Contents/Info.plist"
 
+# Local builds are never releases; stamp them so the About row says so.
+DEV_VERSION="$(git describe --tags --abbrev=0 2>/dev/null || echo 0.0.0)"
+DEV_VERSION="${DEV_VERSION#v}-dev"
+/usr/libexec/PlistBuddy \
+    -c "Set :CFBundleShortVersionString ${DEV_VERSION}" \
+    -c "Set :CFBundleVersion ${DEV_VERSION}" \
+    "${BUNDLE_DIR}/Contents/Info.plist"
+
 if [ -f "${ICON_SRC}" ]; then
     cp "${ICON_SRC}" "${BUNDLE_DIR}/Contents/Resources/AppIcon.icns"
 fi
