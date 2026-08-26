@@ -52,11 +52,13 @@ struct MenuView: View {
 
             Spacer()
 
-            Button(viewModel.muted ? "Unmute" : "Mute") {
-                viewModel.toggle()
+            if viewModel.mode != .hold {
+                Button(viewModel.muted ? "Unmute" : "Mute") {
+                    viewModel.toggle()
+                }
+                .controlSize(.small)
+                .disabled(!viewModel.deviceSupported)
             }
-            .controlSize(.small)
-            .disabled(!viewModel.deviceSupported)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -102,13 +104,33 @@ struct MenuView: View {
 
     private var keysSection: some View {
         VStack(alignment: .leading, spacing: 8) {
+            if TriggerMode.selectable.count > 1 {
+                HStack {
+                    Text("Mode")
+                    Spacer()
+                    Picker("", selection: $viewModel.mode) {
+                        ForEach(TriggerMode.selectable) { Text($0.label).tag($0) }
+                    }
+                    .labelsHidden()
+                    .frame(width: 130)
+                }
+            }
+
             HStack {
                 Text("Key")
                 Spacer()
-                KeyField(combo: $viewModel.key)
+                KeyField(combo: $viewModel.key, allowsBareModifier: viewModel.mode == .hold)
             }
 
             note(KeyField.hint)
+
+            if viewModel.needsAccessibility {
+                permissionNotice
+            } else if viewModel.mode == .hold {
+                note(viewModel.baseMuted
+                     ? "Hold \(viewModel.keyLabel) to talk."
+                     : "Hold \(viewModel.keyLabel) to mute.")
+            }
 
             if viewModel.usesMicKey {
                 note("Dictation stays off while sotto owns the 🎤 key.")
@@ -131,6 +153,21 @@ struct MenuView: View {
             .font(.system(size: 10))
             .foregroundColor(.secondary)
             .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var permissionNotice: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Accessibility permission is required for push to talk.")
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
+            Button("Open System Settings") {
+                viewModel.openAccessibilitySettings()
+            }
+            .controlSize(.small)
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.12)))
     }
 
     private var quitButton: some View {

@@ -1,7 +1,7 @@
 <div align="center">
   <img src="assets/icon.png" alt="sotto" width="80">
   <h1>sotto</h1>
-  <p>Menu bar app to mute your microphone system-wide, with hold-to-talk and an icon you can trust.</p>
+  <p>Menu bar app to mute your microphone system-wide, with push-to-talk and an icon you can trust.</p>
   <br>
   <a href="https://github.com/ugurcandede/sotto/releases/latest"><img src="https://img.shields.io/github/v/release/ugurcandede/sotto?label=version&style=flat-square" alt="Version"></a>
   <a href="https://github.com/ugurcandede/sotto/actions/workflows/build.yml"><img src="https://img.shields.io/github/actions/workflow/status/ugurcandede/sotto/build.yml?style=flat-square" alt="Build"></a>
@@ -31,7 +31,8 @@ brew tap ugurcandede/tap
 brew install --cask sotto
 ```
 
-It works the moment it launches — **no permissions required**.
+It works the moment it launches — **no permissions required**. Push-to-talk
+is the one opt-in exception; turning it on asks for Accessibility.
 
 ---
 
@@ -40,6 +41,7 @@ It works the moment it launches — **no permissions required**.
 | | Feature |
 |---|---|
 | 🎙️ | **Mute system-wide** — one click on the menu bar icon, or a global shortcut |
+| 🗣️ | **Push-to-talk** — hold a key to open the mic, release to mute again |
 | 🔴 | The icon reads the device, not the app — it can't lie about your state |
 | 🎚️ | Switch input device, set gain and test your level from the menu |
 | 🚀 | Launch at login |
@@ -50,9 +52,9 @@ It works the moment it launches — **no permissions required**.
 
 <div align="center">
 
-| Menu | Muted | Input devices |
-|:---:|:---:|:---:|
-| <img src="screenshots/menu-unmuted.png" alt="Menu" width="210"> | <img src="screenshots/menu-muted.png" alt="Muted" width="210"> | <img src="screenshots/menu-devices.png" alt="Input devices" width="210"> |
+| Menu | Muted | Input devices | Push to talk |
+|:---:|:---:|:---:|:---:|
+| <img src="screenshots/menu-unmuted.png" alt="Menu" width="210"> | <img src="screenshots/menu-muted.png" alt="Muted" width="210"> | <img src="screenshots/menu-devices.png" alt="Input devices" width="210"> | <img src="screenshots/menu-ptt.png" alt="Push to talk" width="210"> |
 
 **On-screen feedback**
 
@@ -69,10 +71,10 @@ Mute is a single piece of state, and it lives on the device rather than in the
 app. sotto reads it on launch, writes it when you ask, and follows it when
 something else changes it.
 
-Push-to-talk is modelled but not shipped: holding a key means seeing key-up,
-which only an event tap reports, and that needs Input Monitoring. The state
-model already carries it as `effectiveMute = baseMuted XOR holdActive` so
-turning it on later changes the UI, not the core.
+Push-to-talk rides the same model: holding a key means seeing key-up, which
+only an event tap reports. The state carries it as
+`effectiveMute = baseMuted XOR holdActive`, so the key inverts the base state
+only while it is down.
 
 ### Permissions
 
@@ -81,13 +83,15 @@ turning it on later changes the UI, not the core.
 | mute / unmute | CoreAudio property write | none |
 | toggle shortcut | Carbon `RegisterEventHotKey` | none |
 | level test | `AVAudioEngine` | Microphone, only while testing |
+| push-to-talk | `CGEventTap` | Accessibility, only if you turn it on |
 
 sotto installs and runs without ever asking for anything. The microphone key
 (F5) can drive it too: sotto remaps it below the Dictation shortcut with
 `hidutil`, which needs no permission either.
 
-Push-to-talk is not in this release. It needs `CGEventTap` — the only API that
-reports key-up — and that means Input Monitoring.
+Push-to-talk is the one exception. Swallowing the talk key needs an active
+`CGEventTap` — the only API that reports key-up — and that means
+Accessibility. sotto asks only when you switch the mode on.
 
 ### Menu bar icon
 
@@ -123,7 +127,7 @@ the version string work — the raw binary alone won't do.
 
 ## Requirements
 
-macOS 14.0 (Sonoma) or later · Apple Silicon or Intel · no permissions
+macOS 14.0 (Sonoma) or later · Apple Silicon or Intel · no permissions (Accessibility for push-to-talk only)
 
 ## License
 

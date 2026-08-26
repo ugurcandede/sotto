@@ -29,9 +29,14 @@ if [ -f "${ICON_SRC}" ]; then
     cp "${ICON_SRC}" "${BUNDLE_DIR}/Contents/Resources/AppIcon.icns"
 fi
 
-# Ad-hoc signature with a stable identifier keeps the Input Monitoring grant
-# alive across rebuilds.
-codesign --force --deep --sign - --identifier "${BUNDLE_ID}" "${BUNDLE_DIR}"
+# TCC keys the Input Monitoring grant to the signing identity. The self-signed
+# sotto-dev cert keeps it stable across rebuilds; ad-hoc (cdhash-keyed) loses
+# the grant on every build. Fall back to ad-hoc where the cert is absent (CI).
+SIGN_IDENTITY="sotto-dev"
+if ! security find-identity -v -p codesigning 2>/dev/null | grep -q "\"${SIGN_IDENTITY}\""; then
+    SIGN_IDENTITY="-"
+fi
+codesign --force --deep --sign "${SIGN_IDENTITY}" --identifier "${BUNDLE_ID}" "${BUNDLE_DIR}"
 
 echo "Done: ${BUNDLE_DIR}"
 echo "Run with: open ${BUNDLE_DIR}"

@@ -5,6 +5,7 @@ import SwiftUI
 /// in a setting of its own.
 struct KeyField: View {
     @Binding var combo: KeyCombo?
+    var allowsBareModifier = false
 
     @State private var recording = false
     @State private var monitor: Any?
@@ -44,7 +45,7 @@ struct KeyField: View {
         NSApp.activate(ignoringOtherApps: true)
         NSApp.keyWindow?.makeFirstResponder(nil)
         recording = true
-        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { event in
             handle(event) ? nil : event
         }
     }
@@ -57,13 +58,24 @@ struct KeyField: View {
 
     /// Returns true when the event was consumed.
     private func handle(_ event: NSEvent) -> Bool {
+        if event.type == .flagsChanged {
+            guard allowsBareModifier,
+                  let modifier = ModifierKey(keyCode: UInt16(event.keyCode)),
+                  UInt64(event.modifierFlags.rawValue) & modifier.deviceMask != 0
+            else { return false }
+
+            combo = KeyCombo(keyCode: modifier.keyCode, modifiers: 0)
+            stop()
+            return true
+        }
+
         if event.keyCode == 53 { // esc cancels
             stop()
             return true
         }
 
         let candidate = KeyCombo(event: event)
-        guard candidate.isBindable else { return true }
+        guard candidate.isBindable(allowingBareModifier: allowsBareModifier) else { return true }
         combo = candidate
         stop()
         return true
