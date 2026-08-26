@@ -22,7 +22,7 @@ struct MenuView: View {
 
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 9) {
-            Text(title.uppercased())
+            Text(title.lowercased())
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundColor(.secondary.opacity(0.7))
                 .tracking(0.6)
@@ -53,7 +53,7 @@ struct MenuView: View {
             Spacer()
 
             if viewModel.mode != .hold {
-                Button(viewModel.muted ? "Unmute" : "Mute") {
+                Button(viewModel.muted ? "unmute" : "mute") {
                     viewModel.toggle()
                 }
                 .controlSize(.small)
@@ -67,7 +67,7 @@ struct MenuView: View {
     private var inputSection: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack {
-                Text("Device")
+                Text("device")
                 Spacer()
                 Picker("", selection: Binding(
                     get: { viewModel.selectedInput },
@@ -106,7 +106,7 @@ struct MenuView: View {
         VStack(alignment: .leading, spacing: 8) {
             if TriggerMode.selectable.count > 1 {
                 HStack {
-                    Text("Mode")
+                    Text("mode")
                     Spacer()
                     Picker("", selection: $viewModel.mode) {
                         ForEach(TriggerMode.selectable) { Text($0.label).tag($0) }
@@ -117,7 +117,7 @@ struct MenuView: View {
             }
 
             HStack {
-                Text("Key")
+                Text("key")
                 Spacer()
                 KeyField(combo: $viewModel.key, allowsBareModifier: viewModel.mode == .hold)
             }
@@ -128,8 +128,8 @@ struct MenuView: View {
                 permissionNotice
             } else if viewModel.mode == .hold {
                 note(viewModel.baseMuted
-                     ? "Hold \(viewModel.keyLabel) to talk."
-                     : "Hold \(viewModel.keyLabel) to mute.")
+                     ? "hold \(viewModel.keyLabel) to talk."
+                     : "hold \(viewModel.keyLabel) to mute.")
             }
 
             if viewModel.usesMicKey {
@@ -140,10 +140,10 @@ struct MenuView: View {
 
     private var generalSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Toggle("Show on-screen feedback", isOn: $viewModel.showHUD)
+            Toggle("show on-screen feedback", isOn: $viewModel.showHUD)
                 .toggleStyle(.checkbox)
 
-            Toggle("Launch at login", isOn: $viewModel.launchAtLogin)
+            Toggle("launch at login", isOn: $viewModel.launchAtLogin)
                 .toggleStyle(.checkbox)
         }
     }
@@ -160,7 +160,7 @@ struct MenuView: View {
             Text("Accessibility permission is required for push to talk.")
                 .font(.system(size: 10))
                 .foregroundColor(.secondary)
-            Button("Open System Settings") {
+            Button("open System Settings") {
                 viewModel.openAccessibilitySettings()
             }
             .controlSize(.small)
@@ -174,7 +174,7 @@ struct MenuView: View {
         Button {
             NSApp.terminate(nil)
         } label: {
-            Text("Quit sotto")
+            Text("quit sotto")
                 .font(.system(size: 12))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())

@@ -64,8 +64,8 @@ final class MenuBarViewModel: ObservableObject {
     }
 
     var statusText: String {
-        if !deviceSupported { return "Not supported" }
-        return muted ? "Muted" : "Unmuted"
+        if !deviceSupported { return "not supported" }
+        return muted ? "muted" : "unmuted"
     }
 
     func selectInput(_ uid: String) {
@@ -73,7 +73,7 @@ final class MenuBarViewModel: ObservableObject {
         refreshDevices()
 
         guard let device = coordinator.audio.inputs.first(where: { $0.uid == uid }) else {
-            switchWarning = "That device is no longer available."
+            switchWarning = "that device is no longer available."
             refresh()
             return
         }

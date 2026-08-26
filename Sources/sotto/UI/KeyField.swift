@@ -12,22 +12,22 @@ struct KeyField: View {
 
     /// Bare F-keys reach us only as system events on Macs whose function row is
     /// in media mode, so spell out what actually records.
-    static let hint = "Records ⌘⌥⌃⇧ + key, fn + F1–F12, or the 🎤 key."
+    static let hint = "records ⌘⌥⌃⇧ + key, fn + F1–F12, or the 🎤 key."
 
     var body: some View {
         Menu {
-            Button("Record shortcut…") { start() }
-            Button("🎤 Mic key (F5)") {
+            Button("record shortcut…") { start() }
+            Button("🎤 mic key (F5)") {
                 stop()
                 combo = DictationKey.combo
             }
             Divider()
-            Button("None") {
+            Button("none") {
                 stop()
                 combo = nil
             }
         } label: {
-            Text(recording ? "Press keys…" : label)
+            Text(recording ? "press keys…" : label)
                 .font(.system(size: 11, weight: .medium, design: .rounded))
         }
         .menuStyle(.borderlessButton)
@@ -36,7 +36,7 @@ struct KeyField: View {
     }
 
     private var label: String {
-        guard let combo else { return "None" }
+        guard let combo else { return "none" }
         return combo == DictationKey.combo ? "🎤 F5" : combo.display
     }
 

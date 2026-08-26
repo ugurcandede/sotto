@@ -12,7 +12,7 @@ No. Muting is a CoreAudio property write and the global shortcut is a Carbon
 hotkey; neither requires a grant. The microphone key is claimed with `hidutil`,
 which also needs none.
 
-There are two exceptions, both opt-in. The **Test** button opens the
+There are two exceptions, both opt-in. The **test** button opens the
 microphone to measure your level, so macOS asks once and shows its orange dot
 while the meter runs. **Push-to-talk** needs an event tap to see your key, so
 switching that mode on asks for Accessibility.
@@ -20,13 +20,13 @@ switching that mode on asks for Accessibility.
 ## What happens to Dictation when I use the 🎤 key?
 
 It stays quiet while sotto owns the key. The key is remapped below the layer
-where macOS decides to start Dictation. Pick another key, choose **None**, or
+where macOS decides to start Dictation. Pick another key, choose **none**, or
 quit sotto and Dictation works exactly as before. A logout resets the mapping
 too, so nothing can get stuck.
 
 ## Is push-to-talk supported?
 
-Yes. Pick **Push to talk** in the menu and hold your key: the mic opens while
+Yes. Pick **push to talk** in the menu and hold your key: the mic opens while
 the key is down and mutes again the moment you let go. Holding a key means
 knowing when it is released, and the only macOS API that reports key-up
 globally is an event tap — so this one mode asks for Accessibility. Everything

@@ -31,19 +31,19 @@ macOS sometimes refuses a switch: a Continuity microphone needs the phone
 awake, and AirPods only carry audio in one direction at a time. When that
 happens sotto tells you instead of silently snapping back.
 
-Below the picker are input gain and a **Test** button. Test runs a five second
+Below the picker are input gain and a **test** button. It runs a five second
 level meter; the microphone is open only during those seconds, which is the
 only time macOS shows its orange recording dot for sotto.
 
 ## Keys
 
-Pick a **Mode** — *mute / unmute* toggles with each press; *Push to talk*
+Pick a **mode** — *mute / unmute* toggles with each press; *push to talk*
 opens the mic only while the key is down — then assign one key. The field
 offers three things:
 
-- **Record shortcut…** — press ⌘⌥⌃⇧ with any key, or fn with an F-key
-- **🎤 Mic key (F5)** — claims the microphone key on your keyboard
-- **None** — no global key at all; use the icon or the menu
+- **record shortcut…** — press ⌘⌥⌃⇧ with any key, or fn with an F-key
+- **🎤 mic key (F5)** — claims the microphone key on your keyboard
+- **none** — no global key at all; use the icon or the menu
 
 A key on its own doesn't record: it would swallow your typing everywhere.
 Push to talk is the one exception — there a bare modifier records too, so you
@@ -64,7 +64,7 @@ only its own row, leaving your mappings alone.
 
 <img src="assets/images/menu-ptt.png" alt="Push to talk" class="screenshot-full" style="max-width:300px">
 
-Switch **Mode** to *Push to talk* and the logic inverts: the mic rests muted,
+Switch **mode** to *push to talk* and the logic inverts: the mic rests muted,
 and it opens only while your key is held. Let go and you are muted again —
 there is no state to remember mid-call. The HUD stays on screen for as long
 as you hold, so you can see you are live.
@@ -80,7 +80,7 @@ failsafe closes the mic on its own.
 <img src="assets/images/hud-muted.png" alt="HUD" class="screenshot-full" style="max-width:320px">
 
 A HUD appears near the bottom of the screen when you mute or unmute, showing
-the state and the device it applies to. Turn it off under **General** if you'd
+the state and the device it applies to. Turn it off under **general** if you'd
 rather trust the menu bar alone.
 
 ## Devices that can't be muted
@@ -98,5 +98,5 @@ To see what your hardware exposes:
 
 ## Launch at login
 
-Under **General**. It registers sotto with `SMAppService`, the same mechanism
+Under **general**. It registers sotto with `SMAppService`, the same mechanism
 System Settings shows under Login Items.

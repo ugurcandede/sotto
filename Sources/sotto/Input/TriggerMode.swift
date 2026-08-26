@@ -10,7 +10,7 @@ enum TriggerMode: String, CaseIterable, Identifiable {
     var label: String {
         switch self {
         case .toggle: "mute / unmute"
-        case .hold: "Push to talk"
+        case .hold: "push to talk"
         }
     }
 }

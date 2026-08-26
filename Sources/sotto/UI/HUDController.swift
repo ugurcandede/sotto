@@ -82,7 +82,7 @@ private struct HUDView: View {
         HStack(spacing: 12) {
             icon
             VStack(alignment: .leading, spacing: 1) {
-                Text(muted ? "Muted" : "Unmuted")
+                Text(muted ? "muted" : "unmuted")
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
                 Text(device)
                     .font(.system(size: 10))

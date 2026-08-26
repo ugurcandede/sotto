@@ -126,6 +126,6 @@ struct TriggerModeTests {
 
     @Test func labelsAreDistinct() {
         #expect(TriggerMode.toggle.label == "mute / unmute")
-        #expect(TriggerMode.hold.label == "Push to talk")
+        #expect(TriggerMode.hold.label == "push to talk")
     }
 }
