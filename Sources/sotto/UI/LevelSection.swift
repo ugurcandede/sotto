@@ -7,7 +7,7 @@ struct LevelSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 8) {
-                Button(meter.isRunning ? "Stop" : "Test") {
+                Button(meter.isRunning ? "stop" : "test") {
                     meter.start()
                 }
                 .controlSize(.small)

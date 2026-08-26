@@ -5,28 +5,29 @@ import SwiftUI
 /// in a setting of its own.
 struct KeyField: View {
     @Binding var combo: KeyCombo?
+    var allowsBareModifier = false
 
     @State private var recording = false
     @State private var monitor: Any?
 
     /// Bare F-keys reach us only as system events on Macs whose function row is
     /// in media mode, so spell out what actually records.
-    static let hint = "Records ⌘⌥⌃⇧ + key, fn + F1–F12, or the 🎤 key."
+    static let hint = "records ⌘⌥⌃⇧ + key, fn + F1–F12, or the 🎤 key."
 
     var body: some View {
         Menu {
-            Button("Record shortcut…") { start() }
-            Button("🎤 Mic key (F5)") {
+            Button("record shortcut…") { start() }
+            Button("🎤 mic key (F5)") {
                 stop()
                 combo = DictationKey.combo
             }
             Divider()
-            Button("None") {
+            Button("none") {
                 stop()
                 combo = nil
             }
         } label: {
-            Text(recording ? "Press keys…" : label)
+            Text(recording ? "press keys…" : label)
                 .font(.system(size: 11, weight: .medium, design: .rounded))
         }
         .menuStyle(.borderlessButton)
@@ -35,7 +36,7 @@ struct KeyField: View {
     }
 
     private var label: String {
-        guard let combo else { return "None" }
+        guard let combo else { return "none" }
         return combo == DictationKey.combo ? "🎤 F5" : combo.display
     }
 
@@ -44,7 +45,7 @@ struct KeyField: View {
         NSApp.activate(ignoringOtherApps: true)
         NSApp.keyWindow?.makeFirstResponder(nil)
         recording = true
-        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { event in
             handle(event) ? nil : event
         }
     }
@@ -57,13 +58,24 @@ struct KeyField: View {
 
     /// Returns true when the event was consumed.
     private func handle(_ event: NSEvent) -> Bool {
+        if event.type == .flagsChanged {
+            guard allowsBareModifier,
+                  let modifier = ModifierKey(keyCode: UInt16(event.keyCode)),
+                  UInt64(event.modifierFlags.rawValue) & modifier.deviceMask != 0
+            else { return false }
+
+            combo = KeyCombo(keyCode: modifier.keyCode, modifiers: 0)
+            stop()
+            return true
+        }
+
         if event.keyCode == 53 { // esc cancels
             stop()
             return true
         }
 
         let candidate = KeyCombo(event: event)
-        guard candidate.isBindable else { return true }
+        guard candidate.isBindable(allowingBareModifier: allowsBareModifier) else { return true }
         combo = candidate
         stop()
         return true

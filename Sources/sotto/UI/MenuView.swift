@@ -22,7 +22,7 @@ struct MenuView: View {
 
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 9) {
-            Text(title.uppercased())
+            Text(title.lowercased())
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundColor(.secondary.opacity(0.7))
                 .tracking(0.6)
@@ -52,11 +52,13 @@ struct MenuView: View {
 
             Spacer()
 
-            Button(viewModel.muted ? "Unmute" : "Mute") {
-                viewModel.toggle()
+            if viewModel.mode != .hold {
+                Button(viewModel.muted ? "unmute" : "mute") {
+                    viewModel.toggle()
+                }
+                .controlSize(.small)
+                .disabled(!viewModel.deviceSupported)
             }
-            .controlSize(.small)
-            .disabled(!viewModel.deviceSupported)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -65,7 +67,7 @@ struct MenuView: View {
     private var inputSection: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack {
-                Text("Device")
+                Text("device")
                 Spacer()
                 Picker("", selection: Binding(
                     get: { viewModel.selectedInput },
@@ -102,13 +104,33 @@ struct MenuView: View {
 
     private var keysSection: some View {
         VStack(alignment: .leading, spacing: 8) {
+            if TriggerMode.selectable.count > 1 {
+                HStack {
+                    Text("mode")
+                    Spacer()
+                    Picker("", selection: $viewModel.mode) {
+                        ForEach(TriggerMode.selectable) { Text($0.label).tag($0) }
+                    }
+                    .labelsHidden()
+                    .frame(width: 130)
+                }
+            }
+
             HStack {
-                Text("Key")
+                Text("key")
                 Spacer()
-                KeyField(combo: $viewModel.key)
+                KeyField(combo: $viewModel.key, allowsBareModifier: viewModel.mode == .hold)
             }
 
             note(KeyField.hint)
+
+            if viewModel.needsAccessibility {
+                permissionNotice
+            } else if viewModel.mode == .hold {
+                note(viewModel.baseMuted
+                     ? "hold \(viewModel.keyLabel) to talk."
+                     : "hold \(viewModel.keyLabel) to mute.")
+            }
 
             if viewModel.usesMicKey {
                 note("Dictation stays off while sotto owns the 🎤 key.")
@@ -118,10 +140,10 @@ struct MenuView: View {
 
     private var generalSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Toggle("Show on-screen feedback", isOn: $viewModel.showHUD)
+            Toggle("show on-screen feedback", isOn: $viewModel.showHUD)
                 .toggleStyle(.checkbox)
 
-            Toggle("Launch at login", isOn: $viewModel.launchAtLogin)
+            Toggle("launch at login", isOn: $viewModel.launchAtLogin)
                 .toggleStyle(.checkbox)
         }
     }
@@ -133,11 +155,26 @@ struct MenuView: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
+    private var permissionNotice: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Accessibility permission is required for push to talk.")
+                .font(.system(size: 10))
+                .foregroundColor(.secondary)
+            Button("open System Settings") {
+                viewModel.openAccessibilitySettings()
+            }
+            .controlSize(.small)
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 6).fill(Color.orange.opacity(0.12)))
+    }
+
     private var quitButton: some View {
         Button {
             NSApp.terminate(nil)
         } label: {
-            Text("Quit sotto")
+            Text("quit sotto")
                 .font(.system(size: 12))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())

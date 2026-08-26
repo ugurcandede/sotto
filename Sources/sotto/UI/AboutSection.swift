@@ -12,7 +12,7 @@ struct AboutSection: View {
     var body: some View {
         VStack(spacing: 6) {
             HStack(spacing: 4) {
-                Text("Built with")
+                Text("built with")
                     .foregroundColor(.secondary.opacity(0.5))
                 Text("❤️")
                     .font(.system(size: 9))
