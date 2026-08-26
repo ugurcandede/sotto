@@ -124,6 +124,24 @@ final class MenuBarViewModel: ObservableObject {
             applyBinding()
         }
         needsAccessibility = mode == .hold && !HoldMonitor.hasPermission
+        updatePermissionPoll()
+    }
+
+    /// The grant lands in System Settings while sotto sits in the background,
+    /// and TCC sends no notification — so while the notice is up, poll until
+    /// the grant appears and arm the tap without waiting for the menu.
+    private var permissionPoll: Timer?
+
+    private func updatePermissionPoll() {
+        if needsAccessibility {
+            guard permissionPoll == nil else { return }
+            permissionPoll = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+                Task { @MainActor in self?.refreshPermission() }
+            }
+        } else {
+            permissionPoll?.invalidate()
+            permissionPoll = nil
+        }
     }
 
     func openAccessibilitySettings() {
@@ -172,6 +190,7 @@ final class MenuBarViewModel: ObservableObject {
         case .hold:
             needsAccessibility = !holdMonitor.start(key: key)
         }
+        updatePermissionPoll()
     }
 
     /// While the key is down the HUD stays up, so you can see you are live

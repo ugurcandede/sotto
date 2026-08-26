@@ -24,7 +24,13 @@ final class HoldMonitor {
     func start(key: KeyCombo) -> Bool {
         stop()
         self.key = key
-        if !HoldMonitor.hasPermission { HoldMonitor.requestPermission() }
+        // Require the grant up front: on newer macOS an unauthorized tapCreate
+        // no longer fails — it "succeeds" with keyDown/keyUp silently stripped
+        // from the mask, which would leave the app thinking it is armed.
+        guard HoldMonitor.hasPermission else {
+            HoldMonitor.requestPermission()
+            return false
+        }
 
         let mask = (1 << CGEventType.keyDown.rawValue)
             | (1 << CGEventType.keyUp.rawValue)
