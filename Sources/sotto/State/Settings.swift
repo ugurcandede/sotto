@@ -1,7 +1,8 @@
 import Foundation
 
 enum Settings {
-    private static let defaults = UserDefaults.standard
+    /// The app always uses the standard suite; tests swap in a throwaway one.
+    static var defaults = UserDefaults.standard
 
     /// nil means no key is bound; absent means "never set", so fall back to the
     /// default shortcut.

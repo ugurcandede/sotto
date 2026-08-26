@@ -1,8 +1,18 @@
 import CoreAudio
 import Foundation
 
+/// What `MuteCoordinator` needs from the audio layer. `AudioController` is the
+/// only production conformer; tests substitute a fake.
+protocol MuteEngine: AnyObject {
+    var onExternalChange: ((Bool) -> Void)? { get set }
+    var onDeviceChanged: (() -> Void)? { get set }
+
+    func actualMuted() -> Bool?
+    func apply(_ muted: Bool)
+}
+
 /// The only place in the app that writes to CoreAudio.
-final class AudioController {
+final class AudioController: MuteEngine {
     private(set) var device: AudioDevice?
     private(set) var strategy: MuteStrategy?
 

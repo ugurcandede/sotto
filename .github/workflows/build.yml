@@ -60,6 +60,9 @@ jobs:
             -c "Set :CFBundleVersion ${VERSION}" \
             Resources/Info.plist
 
+      - name: Run tests
+        run: swift test
+
       - name: Build arm64
         run: swift build -c release --arch arm64
 
@@ -127,10 +130,6 @@ jobs:
         run: |
           git clone https://x-access-token:${GH_TOKEN}@github.com/ugurcandede/homebrew-tap.git /tmp/homebrew-tap
           VERSION="${{ steps.version.outputs.version }}"
-          # First release: seed the cask from the template in this repo.
-          if [ ! -f /tmp/homebrew-tap/Casks/sotto.rb ]; then
-            cp packaging/homebrew/sotto.rb /tmp/homebrew-tap/Casks/sotto.rb
-          fi
           cd /tmp/homebrew-tap
           sed -i '' "s|version \".*\"|version \"${VERSION}\"|" Casks/sotto.rb
           sed -i '' "s|sha256 \".*\"|sha256 \"${SHA256}\"|" Casks/sotto.rb

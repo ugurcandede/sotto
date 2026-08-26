@@ -75,8 +75,7 @@ struct KeyField: View {
         }
 
         let candidate = KeyCombo(event: event)
-        let usable = !candidate.flags.isEmpty || candidate.isFunctionKey || allowsBareModifier
-        guard usable else { return true }   // a bare letter would eat typing
+        guard candidate.isBindable(allowingBareModifier: allowsBareModifier) else { return true }
         combo = candidate
         stop()
         return true

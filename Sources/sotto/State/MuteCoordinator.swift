@@ -2,22 +2,24 @@ import Foundation
 
 /// `effectiveMute = baseMuted XOR holdActive`. Every mute decision in the app
 /// goes through here; `AudioController` only executes it.
-final class MuteCoordinator {
+final class MuteCoordinator<Engine: MuteEngine> {
     private(set) var baseMuted = false
     private(set) var holdActive = false
 
     var onChange: (() -> Void)?
 
-    let audio = AudioController()
+    let audio: Engine
 
     /// A missed key-up (sleep, app losing focus) would strand the mic in the
     /// held state forever.
     private var holdFailsafe: Timer?
-    private let holdTimeout: TimeInterval = 30
+    private let holdTimeout: TimeInterval
 
     var effectiveMute: Bool { baseMuted != holdActive }
 
-    init() {
+    init(audio: Engine, holdTimeout: TimeInterval = 30) {
+        self.audio = audio
+        self.holdTimeout = holdTimeout
         audio.onExternalChange = { [weak self] actual in self?.adopt(actual) }
         audio.onDeviceChanged = { [weak self] in self?.onChange?() }
         baseMuted = audio.actualMuted() ?? false

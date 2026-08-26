@@ -8,15 +8,52 @@ protocol MuteStrategy: AnyObject {
     var needsWatchdog: Bool { get }
     var elements: [AudioObjectPropertyElement] { get }
 
-    func apply(_ muted: Bool, to device: AudioDevice) throws
-    func currentlyMuted(on device: AudioDevice) -> Bool?
+    func apply(_ muted: Bool, to device: DeviceIO) throws
+    func currentlyMuted(on device: DeviceIO) -> Bool?
+}
+
+/// The parts of a device `PropertySupport` interrogates. Splitting it out lets
+/// the element-picking rule be tested without CoreAudio hardware.
+protocol DeviceQuerying {
+    var inputChannelCount: Int { get }
+
+    func has(_ address: AudioObjectPropertyAddress) -> Bool
+    func isSettable(_ address: AudioObjectPropertyAddress) -> Bool
+}
+
+/// The reads and writes the strategies perform. A generic `read`/`write` pair
+/// cannot cross a protocol boundary without making every strategy generic, so
+/// the two concrete types they actually use are spelled out here.
+protocol DeviceIO: DeviceQuerying {
+    func readUInt32(_ address: AudioObjectPropertyAddress) -> UInt32?
+    func readFloat(_ address: AudioObjectPropertyAddress) -> Float32?
+    func writeUInt32(_ value: UInt32, to address: AudioObjectPropertyAddress) throws
+    func writeFloat(_ value: Float32, to address: AudioObjectPropertyAddress) throws
+}
+
+extension AudioDevice: DeviceIO {
+    func readUInt32(_ address: AudioObjectPropertyAddress) -> UInt32? {
+        try? read(address, as: UInt32.self)
+    }
+
+    func readFloat(_ address: AudioObjectPropertyAddress) -> Float32? {
+        try? read(address, as: Float32.self)
+    }
+
+    func writeUInt32(_ value: UInt32, to address: AudioObjectPropertyAddress) throws {
+        try write(value, to: address)
+    }
+
+    func writeFloat(_ value: Float32, to address: AudioObjectPropertyAddress) throws {
+        try write(value, to: address)
+    }
 }
 
 enum PropertySupport {
     /// Elements exposing `selector` as settable. Some devices only expose mute
     /// on the channel elements (1, 2) and not on main (0), so main is tried
     /// first and channels are the fallback.
-    static func settableElements(_ selector: AudioObjectPropertySelector, on device: AudioDevice) -> [AudioObjectPropertyElement] {
+    static func settableElements(_ selector: AudioObjectPropertySelector, on device: DeviceQuerying) -> [AudioObjectPropertyElement] {
         let main = AudioDevice.address(selector, element: kAudioObjectPropertyElementMain)
         if device.has(main), device.isSettable(main) {
             return [kAudioObjectPropertyElementMain]
@@ -41,20 +78,20 @@ final class MutePropertyStrategy: MuteStrategy {
         self.elements = elements
     }
 
-    static func make(for device: AudioDevice) -> MutePropertyStrategy? {
+    static func make(for device: DeviceIO) -> MutePropertyStrategy? {
         let elements = PropertySupport.settableElements(kAudioDevicePropertyMute, on: device)
         return elements.isEmpty ? nil : MutePropertyStrategy(elements: elements)
     }
 
-    func apply(_ muted: Bool, to device: AudioDevice) throws {
+    func apply(_ muted: Bool, to device: DeviceIO) throws {
         for element in elements {
-            try device.write(UInt32(muted ? 1 : 0), to: AudioDevice.address(kAudioDevicePropertyMute, element: element))
+            try device.writeUInt32(UInt32(muted ? 1 : 0), to: AudioDevice.address(kAudioDevicePropertyMute, element: element))
         }
     }
 
-    func currentlyMuted(on device: AudioDevice) -> Bool? {
+    func currentlyMuted(on device: DeviceIO) -> Bool? {
         let values = elements.compactMap {
-            try? device.read(AudioDevice.address(kAudioDevicePropertyMute, element: $0), as: UInt32.self)
+            device.readUInt32(AudioDevice.address(kAudioDevicePropertyMute, element: $0))
         }
         guard !values.isEmpty else { return nil }
         return values.allSatisfy { $0 != 0 }
@@ -74,12 +111,12 @@ final class VolumeScalarStrategy: MuteStrategy {
         self.elements = elements
     }
 
-    static func make(for device: AudioDevice) -> VolumeScalarStrategy? {
+    static func make(for device: DeviceIO) -> VolumeScalarStrategy? {
         let elements = PropertySupport.settableElements(kAudioDevicePropertyVolumeScalar, on: device)
         return elements.isEmpty ? nil : VolumeScalarStrategy(elements: elements)
     }
 
-    func apply(_ muted: Bool, to device: AudioDevice) throws {
+    func apply(_ muted: Bool, to device: DeviceIO) throws {
         if muted {
             if let current = readVolume(on: device), current > 0 {
                 savedVolume = current
@@ -90,26 +127,26 @@ final class VolumeScalarStrategy: MuteStrategy {
         }
     }
 
-    func currentlyMuted(on device: AudioDevice) -> Bool? {
+    func currentlyMuted(on device: DeviceIO) -> Bool? {
         guard let volume = readVolume(on: device) else { return nil }
         return volume == 0
     }
 
-    func readVolume(on device: AudioDevice) -> Float32? {
+    func readVolume(on device: DeviceIO) -> Float32? {
         elements.compactMap {
-            try? device.read(AudioDevice.address(kAudioDevicePropertyVolumeScalar, element: $0), as: Float32.self)
+            device.readFloat(AudioDevice.address(kAudioDevicePropertyVolumeScalar, element: $0))
         }.max()
     }
 
-    private func writeVolume(_ volume: Float32, to device: AudioDevice) throws {
+    private func writeVolume(_ volume: Float32, to device: DeviceIO) throws {
         for element in elements {
-            try device.write(volume, to: AudioDevice.address(kAudioDevicePropertyVolumeScalar, element: element))
+            try device.writeFloat(volume, to: AudioDevice.address(kAudioDevicePropertyVolumeScalar, element: element))
         }
     }
 }
 
 enum MuteStrategyFactory {
-    static func strategy(for device: AudioDevice) -> MuteStrategy? {
+    static func strategy(for device: DeviceIO) -> MuteStrategy? {
         MutePropertyStrategy.make(for: device) ?? VolumeScalarStrategy.make(for: device)
     }
 }
