@@ -31,8 +31,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         let isRightClick = NSApp.currentEvent?.type == .rightMouseUp
             || NSApp.currentEvent?.modifierFlags.contains(.control) == true
 
-        // Push-to-talk owns the mute state; a stray click must not unmute you.
-        if isRightClick || viewModel.mode == .hold {
+        if isRightClick {
             togglePopover()
         } else {
             viewModel.toggle()

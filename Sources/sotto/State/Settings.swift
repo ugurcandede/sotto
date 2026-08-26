@@ -17,14 +17,6 @@ enum Settings {
         }
     }
 
-    static var mode: TriggerMode {
-        get {
-            let stored = TriggerMode(rawValue: defaults.string(forKey: "mode") ?? "") ?? .toggle
-            return TriggerMode.selectable.contains(stored) ? stored : .toggle
-        }
-        set { defaults.set(newValue.rawValue, forKey: "mode") }
-    }
-
     static var showHUD: Bool {
         get { defaults.object(forKey: "showHUD") as? Bool ?? true }
         set { defaults.set(newValue, forKey: "showHUD") }

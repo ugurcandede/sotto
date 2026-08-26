@@ -13,11 +13,11 @@ enum DictationKey {
     static var combo: KeyCombo { KeyCombo(keyCode: keyCode, modifiers: 0) }
 
     static var isMapped: Bool {
-        currentMappings.contains { $0["HIDKeyboardModifierMappingSrc"] as? Int == source }
+        currentMappings.contains { $0["HIDKeyboardModifierMappingSrc"] == source }
     }
 
     static func map() {
-        var mappings = currentMappings.filter { $0["HIDKeyboardModifierMappingSrc"] as? Int != source }
+        var mappings = currentMappings.filter { $0["HIDKeyboardModifierMappingSrc"] != source }
         mappings.append([
             "HIDKeyboardModifierMappingSrc": source,
             "HIDKeyboardModifierMappingDst": destination,
@@ -26,7 +26,7 @@ enum DictationKey {
     }
 
     static func unmap() {
-        write(currentMappings.filter { $0["HIDKeyboardModifierMappingSrc"] as? Int != source })
+        write(currentMappings.filter { $0["HIDKeyboardModifierMappingSrc"] != source })
     }
 
     // MARK: - hidutil

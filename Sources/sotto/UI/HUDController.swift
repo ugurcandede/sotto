@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// Brief on-screen confirmation for deliberate toggles. Hold transitions
-/// deliberately do not show it — during push-to-talk it would flash constantly.
+/// Brief on-screen confirmation for deliberate toggles.
 @MainActor
 final class HUDController {
     private var panel: NSPanel?
@@ -10,16 +9,12 @@ final class HUDController {
 
     /// A fresh panel per toggle: a fade still running from the previous one
     /// then operates on its own, already hidden window instead of this one.
-    /// `sticky` keeps it on screen until `hide()` — used while a push-to-talk
-    /// key is held down.
-    func show(muted: Bool, device: String, sticky: Bool = false) {
+    func show(muted: Bool, device: String) {
         panel?.orderOut(nil)
 
         let panel = makePanel(muted: muted, device: device)
         self.panel = panel
         panel.orderFrontRegardless()
-
-        guard !sticky else { return }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + visibleDuration) {
             NSAnimationContext.runAnimationGroup { context in
@@ -28,17 +23,6 @@ final class HUDController {
             } completionHandler: {
                 panel.orderOut(nil)
             }
-        }
-    }
-
-    func hide() {
-        guard let panel else { return }
-        self.panel = nil
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.2
-            panel.animator().alphaValue = 0
-        } completionHandler: {
-            panel.orderOut(nil)
         }
     }
 

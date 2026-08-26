@@ -7,13 +7,11 @@ struct StatusIcon: View {
 
     private var symbolName: String {
         if !viewModel.deviceSupported { return "mic.badge.xmark" }
-        if viewModel.mode == .hold { return viewModel.muted ? "mic.slash.circle" : "mic.circle" }
         return viewModel.muted ? "mic.slash" : "mic"
     }
 
     private var color: Color {
-        if viewModel.muted { return .red }
-        return viewModel.holdActive ? .accentColor : .primary
+        viewModel.muted ? .red : .primary
     }
 
     var body: some View {

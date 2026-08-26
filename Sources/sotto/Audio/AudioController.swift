@@ -130,9 +130,13 @@ extension AudioController {
         return !(strategy?.needsWatchdog == true && desiredMute)
     }
 
+    /// The loudest element, matching how `VolumeScalarStrategy` reads it — the
+    /// slider and the mute decision must agree on what "the volume" is.
     var inputVolume: Float {
-        guard let device, let element = volumeElements.first else { return 0 }
-        return (try? device.read(AudioDevice.address(kAudioDevicePropertyVolumeScalar, element: element), as: Float32.self)) ?? 0
+        guard let device else { return 0 }
+        return volumeElements.compactMap {
+            try? device.read(AudioDevice.address(kAudioDevicePropertyVolumeScalar, element: $0), as: Float32.self)
+        }.max() ?? 0
     }
 
     func setInputVolume(_ volume: Float) {
