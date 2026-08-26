@@ -24,8 +24,8 @@ final class AudioController: MuteEngine {
 
     private let systemObserver = DeviceObserver()
     private var deviceObserver = DeviceObserver()
-    fileprivate var desiredMute = false
-    fileprivate var lastWriteAt: CFAbsoluteTime = 0
+    private var desiredMute = false
+    private var lastWriteAt: CFAbsoluteTime = 0
 
     /// Property listeners also fire for our own writes; ignore anything that
     /// lands inside this window after one.

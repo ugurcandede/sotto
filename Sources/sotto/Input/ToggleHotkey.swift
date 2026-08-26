@@ -10,21 +10,17 @@ final class ToggleHotkey {
     private var eventHandler: EventHandlerRef?
     private static let signature = OSType(0x484D4943) // 'HMIC'
 
-    private static var instances: [UInt32: ToggleHotkey] = [:]
-    private static var nextID: UInt32 = 1
-
-    private var id: UInt32?
+    /// Carbon's C callback can't capture Swift context, so it reaches the one
+    /// live instance through this static bridge.
+    private static weak var shared: ToggleHotkey?
 
     @discardableResult
     func register(_ combo: KeyCombo) -> Bool {
         unregister()
         installHandlerIfNeeded()
 
-        let id = ToggleHotkey.nextID
-        ToggleHotkey.nextID += 1
-
         var ref: EventHotKeyRef?
-        let hotKeyID = EventHotKeyID(signature: ToggleHotkey.signature, id: id)
+        let hotKeyID = EventHotKeyID(signature: ToggleHotkey.signature, id: 1)
         let status = RegisterEventHotKey(
             UInt32(combo.keyCode), combo.carbonModifiers, hotKeyID,
             GetApplicationEventTarget(), 0, &ref
@@ -32,30 +28,21 @@ final class ToggleHotkey {
 
         guard status == noErr, let ref else { return false }
         hotKeyRef = ref
-        self.id = id
-        ToggleHotkey.instances[id] = self
+        ToggleHotkey.shared = self
         return true
     }
 
     func unregister() {
         if let hotKeyRef { UnregisterEventHotKey(hotKeyRef) }
         hotKeyRef = nil
-        if let id { ToggleHotkey.instances.removeValue(forKey: id) }
-        id = nil
     }
 
     private func installHandlerIfNeeded() {
         guard eventHandler == nil else { return }
         var type = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
 
-        InstallEventHandler(GetApplicationEventTarget(), { _, event, _ -> OSStatus in
-            var hotKeyID = EventHotKeyID()
-            let status = GetEventParameter(
-                event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID),
-                nil, MemoryLayout<EventHotKeyID>.size, nil, &hotKeyID
-            )
-            guard status == noErr else { return status }
-            ToggleHotkey.instances[hotKeyID.id]?.onTrigger?()
+        InstallEventHandler(GetApplicationEventTarget(), { _, _, _ -> OSStatus in
+            ToggleHotkey.shared?.onTrigger?()
             return noErr
         }, 1, &type, nil, &eventHandler)
     }
