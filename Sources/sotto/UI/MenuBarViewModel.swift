@@ -30,6 +30,7 @@ final class MenuBarViewModel: ObservableObject {
     @Published var mode = Settings.mode { didSet { modeChanged() } }
     @Published var key: KeyCombo? = Settings.key { didSet { Settings.key = key; applyBinding() } }
     @Published private(set) var needsAccessibility = false
+    @Published private(set) var staleAccessibility = false
 
     @Published var showHUD = Settings.showHUD { didSet { Settings.showHUD = showHUD } }
 
@@ -133,6 +134,8 @@ final class MenuBarViewModel: ObservableObject {
     private var permissionPoll: Timer?
 
     private func updatePermissionPoll() {
+        staleAccessibility = needsAccessibility && Settings.hadAccessibility
+        if staleAccessibility { resetStaleGrant() }
         if needsAccessibility {
             guard permissionPoll == nil else { return }
             permissionPoll = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
@@ -142,6 +145,24 @@ final class MenuBarViewModel: ObservableObject {
             permissionPoll?.invalidate()
             permissionPoll = nil
         }
+    }
+
+    /// An update changes the ad-hoc signature, so the recorded grant can never
+    /// match again — while System Settings still shows sotto as enabled. Clear
+    /// the dead record and ask again, so the user gets a working prompt
+    /// instead of a toggle that is already on.
+    private var staleGrantHandled = false
+
+    private func resetStaleGrant() {
+        guard !staleGrantHandled else { return }
+        staleGrantHandled = true
+        let reset = Process()
+        reset.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
+        reset.arguments = ["reset", "Accessibility", Bundle.main.bundleIdentifier ?? "com.ugurcandede.sotto"]
+        reset.terminationHandler = { _ in
+            DispatchQueue.main.async { HoldMonitor.requestPermission() }
+        }
+        try? reset.run()
     }
 
     func openAccessibilitySettings() {
@@ -189,6 +210,7 @@ final class MenuBarViewModel: ObservableObject {
             toggleHotkey.register(key)
         case .hold:
             needsAccessibility = !holdMonitor.start(key: key)
+            if !needsAccessibility { Settings.hadAccessibility = true }
         }
         updatePermissionPoll()
     }

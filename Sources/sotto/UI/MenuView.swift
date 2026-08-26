@@ -160,6 +160,11 @@ struct MenuView: View {
             Text("Accessibility permission is required for push to talk.")
                 .font(.system(size: 10))
                 .foregroundColor(.secondary)
+            if viewModel.staleAccessibility {
+                Text("the update invalidated the old grant — allow sotto again.")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+            }
             Button("open System Settings") {
                 viewModel.openAccessibilitySettings()
             }

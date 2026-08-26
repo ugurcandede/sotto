@@ -30,6 +30,14 @@ enum Settings {
         set { defaults.set(newValue, forKey: "showHUD") }
     }
 
+    /// Set once the tap has actually armed. If the grant later reads as
+    /// missing, it is a stale record from an earlier binary (updates change
+    /// the ad-hoc signature), not a fresh install — the notice can say so.
+    static var hadAccessibility: Bool {
+        get { defaults.bool(forKey: "hadAccessibility") }
+        set { defaults.set(newValue, forKey: "hadAccessibility") }
+    }
+
     private static func decode(_ key: String) -> KeyCombo? {
         guard let data = defaults.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(KeyCombo.self, from: data)

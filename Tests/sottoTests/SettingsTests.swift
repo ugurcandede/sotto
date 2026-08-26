@@ -93,6 +93,14 @@ struct SettingsTests {
 
     // MARK: - showHUD
 
+    @Test func accessibilityStartsAsNeverGranted() throws {
+        try withScratchDefaults { _ in
+            #expect(!Settings.hadAccessibility)
+            Settings.hadAccessibility = true
+            #expect(Settings.hadAccessibility)
+        }
+    }
+
     @Test func hudIsOnUntilTurnedOff() throws {
         try withScratchDefaults { _ in
             #expect(Settings.showHUD)

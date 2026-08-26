@@ -32,6 +32,14 @@ knowing when it is released, and the only macOS API that reports key-up
 globally is an event tap — so this one mode asks for Accessibility. Everything
 else keeps working without any grant.
 
+## Push to talk stopped working after an update
+
+macOS ties the Accessibility grant to the exact binary it was given, and
+sotto's builds are not yet notarized — so an update invalidates the grant
+while System Settings still shows sotto as enabled. sotto detects this,
+clears the dead record, and asks again; approve the prompt and push to talk
+comes back within seconds.
+
 ## My shortcut won't record
 
 Two keys are rejected on purpose, and one is rejected by macOS:
