@@ -145,6 +145,9 @@ struct MenuView: View {
 
             Toggle("launch at login", isOn: $viewModel.launchAtLogin)
                 .toggleStyle(.checkbox)
+
+            Toggle("send anonymous usage stats", isOn: $viewModel.sendUsageStats)
+                .toggleStyle(.checkbox)
         }
     }
 

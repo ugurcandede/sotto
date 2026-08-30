@@ -34,6 +34,8 @@ final class MenuBarViewModel: ObservableObject {
 
     @Published var showHUD = Settings.showHUD { didSet { Settings.showHUD = showHUD } }
 
+    @Published var sendUsageStats = Settings.analyticsEnabled { didSet { Settings.analyticsEnabled = sendUsageStats } }
+
     @Published var launchAtLogin = SMAppService.mainApp.status == .enabled { didSet { applyLaunchAtLogin() } }
 
     private let coordinator = MuteCoordinator(audio: AudioController())
