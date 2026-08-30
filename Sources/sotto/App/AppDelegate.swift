@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         statusItem = StatusItemController(viewModel: viewModel)
         installTerminationHandlers()
+        Analytics.start()
     }
 
     func applicationWillTerminate(_ notification: Notification) {

@@ -93,6 +93,13 @@ Push-to-talk is the one exception. Swallowing the talk key needs an active
 `CGEventTap` — the only API that reports key-up — and that means
 Accessibility. sotto asks only when you switch the mode on.
 
+### Usage stats
+
+sotto sends one anonymous ping per day to Google Analytics: a random install
+id, the app version and which mode you use (toggle or push-to-talk). Nothing
+else — **no audio, no keys, no device names.** Turn it off any time by unchecking
+**send anonymous usage stats** in the menu.
+
 ### Menu bar icon
 
 | Icon | Meaning |

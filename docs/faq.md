@@ -17,6 +17,13 @@ microphone to measure your level, so macOS asks once and shows its orange dot
 while the meter runs. **Push-to-talk** needs an event tap to see your key, so
 switching that mode on asks for Accessibility.
 
+## Does sotto collect any data?
+
+Once a day it sends an anonymous ping to Google Analytics: a random install
+id, the app version and which mode you use. **No audio, no keystrokes, no
+device names.** Turn it off any time by unchecking **send anonymous usage
+stats** in the menu.
+
 ## What happens to Dictation when I use the 🎤 key?
 
 It stays quiet while sotto owns the key. The key is remapped below the layer

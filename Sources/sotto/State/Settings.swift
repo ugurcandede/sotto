@@ -38,6 +38,25 @@ enum Settings {
         set { defaults.set(newValue, forKey: "hadAccessibility") }
     }
 
+    static var analyticsEnabled: Bool {
+        get { defaults.object(forKey: "analyticsEnabled") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "analyticsEnabled") }
+    }
+
+    /// yyyy-MM-dd of the last ping, so a day gets at most one.
+    static var lastAnalyticsPing: String? {
+        get { defaults.string(forKey: "lastAnalyticsPing") }
+        set { defaults.set(newValue, forKey: "lastAnalyticsPing") }
+    }
+
+    /// Random id minted on first use — the only identifier analytics sends.
+    static var analyticsClientID: String {
+        if let id = defaults.string(forKey: "analyticsClientID") { return id }
+        let id = UUID().uuidString
+        defaults.set(id, forKey: "analyticsClientID")
+        return id
+    }
+
     private static func decode(_ key: String) -> KeyCombo? {
         guard let data = defaults.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(KeyCombo.self, from: data)
