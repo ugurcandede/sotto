@@ -9,8 +9,8 @@ description: Common questions about sotto
 ## Does sotto need any permissions?
 
 No. Muting is a CoreAudio property write and the global shortcut is a Carbon
-hotkey; neither requires a grant. The microphone key is claimed with `hidutil`,
-which also needs none.
+hotkey; neither requires a grant. The microphone key is claimed with an HID key
+remap, which also needs none.
 
 There are two exceptions, both opt-in. The **test** button opens the
 microphone to measure your level, so macOS asks once and shows its orange dot

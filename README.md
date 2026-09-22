@@ -87,7 +87,7 @@ only while it is down.
 
 sotto installs and runs without ever asking for anything. The microphone key
 (F5) can drive it too: sotto remaps it below the Dictation shortcut with
-`hidutil`, which needs no permission either.
+an HID key remap, which needs no permission either.
 
 Push-to-talk is the one exception. Swallowing the talk key needs an active
 `CGEventTap` — the only API that reports key-up — and that means

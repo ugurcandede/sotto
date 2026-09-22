@@ -104,7 +104,7 @@ title: Home
 <div class="home-cta">
   <span class="cta-pill">No permissions</span>
   <h2>Nothing to grant, nothing to trust</h2>
-  <p>Muting is a CoreAudio property write. The global shortcut is a Carbon hotkey. The microphone key is claimed at the HID layer with <code>hidutil</code>. None of those ask you for anything, so sotto installs and works before it has earned any trust — which is the right order for an app that sits on your microphone. The one exception is push-to-talk: seeing and swallowing your talk key needs an event tap, so switching that mode on asks for Accessibility — the only grant in the app, and only if you use it.</p>
+  <p>Muting is a CoreAudio property write. The global shortcut is a Carbon hotkey. The microphone key is claimed with a remap at the HID layer. None of those ask you for anything, so sotto installs and works before it has earned any trust — which is the right order for an app that sits on your microphone. The one exception is push-to-talk: seeing and swallowing your talk key needs an event tap, so switching that mode on asks for Accessibility — the only grant in the app, and only if you use it.</p>
   <div class="btn-row">
     <a class="btn btn-accent" href="{{ '/guide' | relative_url }}">Read the guide</a>
     <a class="btn btn-ghost" href="{{ '/faq' | relative_url }}">FAQ</a>

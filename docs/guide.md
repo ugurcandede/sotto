@@ -52,8 +52,8 @@ can hold right ⌥ to talk.
 ### About the 🎤 key
 
 macOS turns the microphone key into a Dictation trigger before any app can see
-it. sotto gets underneath that by remapping the key at the HID layer with
-`hidutil`, which needs no permission. While the key is bound to sotto,
+it. sotto gets underneath that by remapping the key at the HID layer, which
+needs no permission. While the key is bound to sotto,
 Dictation stays quiet; unbind it or quit sotto and Dictation comes back. The
 remap never survives a logout, so it cannot get stuck.
 
