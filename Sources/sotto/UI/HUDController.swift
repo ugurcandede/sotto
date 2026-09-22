@@ -45,9 +45,10 @@ final class HUDController {
     private func makePanel(muted: Bool, device: String) -> NSPanel {
         let hosting = NSHostingController(rootView: HUDView(muted: muted, device: device))
         hosting.sizingOptions = .preferredContentSize
+        let size = hosting.view.fittingSize
 
         let panel = NSPanel(
-            contentRect: NSRect(origin: .zero, size: hosting.view.fittingSize),
+            contentRect: NSRect(origin: .zero, size: size),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -60,9 +61,11 @@ final class HUDController {
         panel.level = .statusBar
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
 
+        // Assigning the content view controller collapses the frame to zero
+        // until the next layout pass, so center on the measured size instead.
         if let screen = NSScreen.main {
             panel.setFrameOrigin(NSPoint(
-                x: screen.frame.midX - panel.frame.width / 2,
+                x: screen.frame.midX - size.width / 2,
                 y: screen.visibleFrame.minY + 120
             ))
         }
