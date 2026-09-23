@@ -10,14 +10,14 @@ final class MuteCoordinator<Engine: MuteEngine> {
 
     let audio: Engine
 
-    /// A missed key-up (sleep, app losing focus) would strand the mic in the
-    /// held state forever.
+    /// A missed key-up (sleep, secure input) would strand the mic in the held
+    /// state forever. Long enough for a real push-to-talk turn in a meeting.
     private var holdFailsafe: Timer?
     private let holdTimeout: TimeInterval
 
     var effectiveMute: Bool { baseMuted != holdActive }
 
-    init(audio: Engine, holdTimeout: TimeInterval = 30) {
+    init(audio: Engine, holdTimeout: TimeInterval = 120) {
         self.audio = audio
         self.holdTimeout = holdTimeout
         audio.onExternalChange = { [weak self] actual in self?.adopt(actual) }

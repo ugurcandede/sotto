@@ -38,6 +38,21 @@ struct ModifierKeyTests {
 @Suite("KeyCombo")
 struct KeyComboTests {
 
+    /// A hold bound to ⌥⌘M must not fire on a plain "m".
+    @Test func matchesRequiresExactModifiers() {
+        let combo = KeyCombo.defaultToggle
+        #expect(combo.matches([.maskCommand, .maskAlternate]))
+        #expect(!combo.matches([]))
+        #expect(!combo.matches([.maskCommand]))
+        #expect(!combo.matches([.maskCommand, .maskAlternate, .maskShift]))
+    }
+
+    @Test func matchesIgnoresFnAndCapsLock() {
+        let bare = KeyCombo(keyCode: 105, modifiers: 0)
+        #expect(bare.matches([.maskSecondaryFn, .maskAlphaShift]))
+        #expect(!bare.matches([.maskShift]))
+    }
+
     // MARK: - Classification
 
     @Test func modifierComboReportsItsDeviceMask() {

@@ -117,6 +117,7 @@ final class MenuBarViewModel: ObservableObject {
     /// Called when the popover opens — devices come and go while it is closed.
     func refreshOnOpen() {
         switchWarning = nil
+        permissionPollTicks = 0
         refreshDevices()
         refreshPermission()
         refresh()
@@ -132,21 +133,36 @@ final class MenuBarViewModel: ObservableObject {
 
     /// The grant lands in System Settings while sotto sits in the background,
     /// and TCC sends no notification — so while the notice is up, poll until
-    /// the grant appears and arm the tap without waiting for the menu.
+    /// the grant appears and arm the tap without waiting for the menu. The
+    /// poll gives up after a few minutes; opening the menu or the settings
+    /// link starts it again.
     private var permissionPoll: Timer?
+    private var permissionPollTicks = 0
+    private let permissionPollLimit = 150 // 5 minutes at 2 s
 
     private func updatePermissionPoll() {
         staleAccessibility = needsAccessibility && Settings.hadAccessibility
         if staleAccessibility { resetStaleGrant() }
         if needsAccessibility {
             guard permissionPoll == nil else { return }
+            permissionPollTicks = 0
             permissionPoll = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
-                Task { @MainActor in self?.refreshPermission() }
+                Task { @MainActor in self?.pollPermission() }
             }
         } else {
             permissionPoll?.invalidate()
             permissionPoll = nil
         }
+    }
+
+    private func pollPermission() {
+        permissionPollTicks += 1
+        guard permissionPollTicks <= permissionPollLimit else {
+            permissionPoll?.invalidate()
+            permissionPoll = nil
+            return
+        }
+        refreshPermission()
     }
 
     /// An update changes the ad-hoc signature, so the recorded grant can never
@@ -168,6 +184,7 @@ final class MenuBarViewModel: ObservableObject {
     }
 
     func openAccessibilitySettings() {
+        permissionPollTicks = 0
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
         NSWorkspace.shared.open(url)
     }

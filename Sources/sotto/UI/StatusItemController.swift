@@ -62,6 +62,9 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 
     func popoverDidClose(_ notification: Notification) {
         statusItem.button?.highlight(false)
+        // Nobody can see the meter now; keep capturing and the orange
+        // privacy dot stays lit for no reason.
+        viewModel.levelMeter.stop()
     }
 
     private func installIcon() {

@@ -27,8 +27,9 @@ final class AudioController: MuteEngine {
     fileprivate var desiredMute = false
     fileprivate var lastWriteAt: CFAbsoluteTime = 0
 
-    /// Property listeners also fire for our own writes; ignore anything that
-    /// lands inside this window after one.
+    /// Property listeners also fire for our own writes. Inside this window
+    /// the watchdog stands down (a change right after our write is ours);
+    /// the state is still adopted, which is a no-op for our own writes.
     private let writeGrace: CFAbsoluteTime = 0.2
 
     init() {

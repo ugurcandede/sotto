@@ -93,8 +93,17 @@ final class HoldMonitor {
             return Unmanaged.passUnretained(event)
         }
 
-        guard type == .keyDown || type == .keyUp else { return Unmanaged.passUnretained(event) }
-        report(type == .keyDown)
+        // Match the modifiers too, or a hold bound to ⌥⌘M would swallow every
+        // plain "m". Key-up counts only while held, so the key-up of a
+        // non-matching press still reaches the app that got its key-down.
+        switch type {
+        case .keyDown where key.matches(event.flags):
+            report(true)
+        case .keyUp where isHeld:
+            report(false)
+        default:
+            return Unmanaged.passUnretained(event)
+        }
         return nil
     }
 

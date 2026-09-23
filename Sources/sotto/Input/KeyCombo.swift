@@ -39,6 +39,12 @@ struct KeyCombo: Codable, Equatable {
     /// independent bits, so hold detection uses the device-dependent mask.
     var deviceMask: UInt64? { ModifierKey(keyCode: keyCode)?.deviceMask }
 
+    /// Exact match on ⌘⌥⌃⇧, like a Carbon hotkey; fn and caps lock are ignored.
+    func matches(_ flags: CGEventFlags) -> Bool {
+        let relevant = CGEventFlags([.maskCommand, .maskAlternate, .maskControl, .maskShift]).rawValue
+        return flags.rawValue & relevant == UInt64(modifiers) & relevant
+    }
+
     var carbonModifiers: UInt32 {
         var value: UInt32 = 0
         if flags.contains(.command) { value |= UInt32(cmdKey) }
