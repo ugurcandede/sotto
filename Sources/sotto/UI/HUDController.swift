@@ -21,12 +21,17 @@ final class HUDController {
 
         guard !sticky else { return }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + visibleDuration) {
+        // Release the panel once hidden: an ordered-out window still renders
+        // the ripple's repeatForever animation every frame (~8% CPU forever).
+        DispatchQueue.main.asyncAfter(deadline: .now() + visibleDuration) { [weak self] in
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.35
                 panel.animator().alphaValue = 0
             } completionHandler: {
                 panel.orderOut(nil)
+                MainActor.assumeIsolated {
+                    if self?.panel === panel { self?.panel = nil }
+                }
             }
         }
     }
@@ -63,7 +68,10 @@ final class HUDController {
 
         // Assigning the content view controller collapses the frame to zero
         // until the next layout pass, so center on the measured size instead.
-        if let screen = NSScreen.main {
+        // The screen under the cursor is where the user is looking;
+        // `NSScreen.main` is just the primary display for an accessory app.
+        let mouse = NSEvent.mouseLocation
+        if let screen = NSScreen.screens.first(where: { $0.frame.contains(mouse) }) ?? NSScreen.main {
             panel.setFrameOrigin(NSPoint(
                 x: screen.frame.midX - size.width / 2,
                 y: screen.visibleFrame.minY + 120
