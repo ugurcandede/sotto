@@ -5,6 +5,9 @@ struct MenuView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            if let update = viewModel.availableUpdate {
+                UpdateBanner(update: update, viewModel: viewModel)
+            }
             header
             Divider()
             section("Input") { inputSection }

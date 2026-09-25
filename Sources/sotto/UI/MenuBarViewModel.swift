@@ -27,16 +27,46 @@ final class MenuBarViewModel: ObservableObject {
     @Published private(set) var canAdjustVolume = false
 
     /// One binding: a mode and the key that drives it.
-    @Published var mode = Settings.mode { didSet { modeChanged() } }
-    @Published var key: KeyCombo? = Settings.key { didSet { Settings.key = key; applyBinding() } }
+    @Published var mode = Settings.mode {
+        didSet { modeChanged(); trackSetting("mode", mode.rawValue, oldValue != mode) }
+    }
+    @Published var key: KeyCombo? = Settings.key {
+        didSet { Settings.key = key; applyBinding(); trackSetting("key", keyType, oldValue != key) }
+    }
     @Published private(set) var needsAccessibility = false
     @Published private(set) var staleAccessibility = false
 
-    @Published var showHUD = Settings.showHUD { didSet { Settings.showHUD = showHUD } }
+    @Published var showHUD = Settings.showHUD {
+        didSet { Settings.showHUD = showHUD; trackSetting("show_hud", showHUD, oldValue != showHUD) }
+    }
 
-    @Published var sendUsageStats = Settings.analyticsEnabled { didSet { Settings.analyticsEnabled = sendUsageStats } }
+    @Published var sendUsageStats = Settings.analyticsEnabled {
+        didSet {
+            Settings.analyticsEnabled = sendUsageStats
+            if !sendUsageStats { Analytics.disabled() }
+            // Only lands when turned on: analytics is off otherwise.
+            trackSetting("usage_stats", sendUsageStats, oldValue != sendUsageStats)
+        }
+    }
 
-    @Published var launchAtLogin = SMAppService.mainApp.status == .enabled { didSet { applyLaunchAtLogin() } }
+    @Published var launchAtLogin = SMAppService.mainApp.status == .enabled {
+        didSet {
+            applyLaunchAtLogin()
+            trackSetting("launch_at_login", launchAtLogin, oldValue != launchAtLogin)
+        }
+    }
+
+    @Published private(set) var availableUpdate: AppUpdate?
+    private var updateBannerTrackedVersion: String?
+
+    // Analytics: activity since the last heartbeat. Push-to-talk can fire
+    // hundreds of times a meeting, so holds are summarised, not sent one by one.
+    private var toggleCount = 0
+    private var holdCount = 0
+    private var holdSeconds: TimeInterval = 0
+    private var longestHold: TimeInterval = 0
+    private var holdStartedAt: Date?
+    private var lastTrackedInput: String?
 
     private let coordinator = MuteCoordinator(audio: AudioController())
     private let toggleHotkey = ToggleHotkey()
@@ -47,7 +77,7 @@ final class MenuBarViewModel: ObservableObject {
     init() {
         coordinator.onChange = { [weak self] in self?.refresh() }
         coordinator.audio.onDeviceListChanged = { [weak self] in self?.refreshDevices() }
-        toggleHotkey.onTrigger = { [weak self] in self?.toggle() }
+        toggleHotkey.onTrigger = { [weak self] in self?.toggle(source: "hotkey") }
         holdMonitor.onHoldChange = { [weak self] held in self?.coordinator.setHold(held) }
 
         applyBinding()
@@ -77,6 +107,7 @@ final class MenuBarViewModel: ObservableObject {
 
         guard let device = coordinator.audio.inputs.first(where: { $0.uid == uid }) else {
             switchWarning = "that device is no longer available."
+            Analytics.track("input_switched", ["result": "unavailable"])
             refresh()
             return
         }
@@ -89,7 +120,9 @@ final class MenuBarViewModel: ObservableObject {
             try? await Task.sleep(for: .milliseconds(800))
             guard let self else { return }
             self.refresh()
-            if self.selectedInput != uid {
+            let kept = self.selectedInput != uid
+            Analytics.track("input_switched", ["result": kept ? "reverted" : "ok", "strategy": self.strategyName])
+            if kept {
                 self.switchWarning = "macOS kept the previous input — \(name) isn't available right now."
             }
         }
@@ -104,8 +137,10 @@ final class MenuBarViewModel: ObservableObject {
         inputs = coordinator.audio.inputs.map { InputChoice(id: $0.uid, name: $0.name) }
     }
 
-    func toggle() {
+    func toggle(source: String = "menu") {
         coordinator.toggle()
+        toggleCount += 1
+        Analytics.track("mute_toggled", ["muted": coordinator.effectiveMute, "source": source])
         if showHUD { hud.show(muted: coordinator.effectiveMute, device: coordinator.audio.deviceName) }
     }
 
@@ -121,13 +156,116 @@ final class MenuBarViewModel: ObservableObject {
         refreshDevices()
         refreshPermission()
         refresh()
+        Analytics.track("popover_opened", [
+            "mode": mode.rawValue,
+            "muted": muted,
+            "needs_accessibility": needsAccessibility,
+        ])
+        if let update = availableUpdate, updateBannerTrackedVersion != update.version {
+            updateBannerTrackedVersion = update.version
+            Analytics.track("update_banner_shown", ["latest_version": update.version])
+        }
+    }
+
+    // MARK: - Analytics
+
+    /// The kind of key bound, never the key itself.
+    var keyType: String {
+        guard let key else { return "none" }
+        if key == DictationKey.combo { return "mic_key" }
+        if key.isModifierKey { return "modifier_only" }
+        if key.isFunctionKey { return "function_key" }
+        return "combo"
+    }
+
+    private func trackSetting(_ name: String, _ value: Any, _ changed: Bool) {
+        guard changed else { return }
+        refreshUserProperties() // first, so the event carries the new values
+        Analytics.track("setting_changed", ["setting": name, "value": "\(value)"])
+    }
+
+    /// Settings worth slicing every report by.
+    func refreshUserProperties() {
+        Analytics.setUserProperties([
+            "trigger_mode": mode.rawValue,
+            "key_type": keyType,
+            "show_hud": showHUD,
+            "launch_at_login": launchAtLogin,
+            "input_count": inputs.count,
+        ])
+    }
+
+    /// Activity summary for the periodic heartbeat; nil when nothing happened,
+    /// so an idle sotto does not count as active.
+    func heartbeatParams() -> [String: Any]? {
+        guard toggleCount > 0 || holdCount > 0 || holdStartedAt != nil else { return nil }
+        defer {
+            toggleCount = 0
+            holdCount = 0
+            holdSeconds = 0
+            longestHold = 0
+        }
+        return [
+            "mode": mode.rawValue,
+            "muted": muted,
+            "toggles": toggleCount,
+            "holds": holdCount,
+            "hold_sec": Int(holdSeconds),
+            "max_hold_sec": Int(longestHold),
+        ]
+    }
+
+    private func recordHold(_ held: Bool) {
+        if held {
+            holdStartedAt = Date()
+            return
+        }
+        guard let start = holdStartedAt else { return }
+        holdStartedAt = nil
+        let duration = Date().timeIntervalSince(start)
+        holdCount += 1
+        holdSeconds += duration
+        longestHold = max(longestHold, duration)
+        // The coordinator's failsafe releases a hold after 120 s; a hold that
+        // long almost always means a missed key-up, which is worth seeing.
+        if duration >= 119 { Analytics.track("hold_failsafe", ["mode": mode.rawValue]) }
+    }
+
+    // MARK: - Updates
+
+    func checkForUpdates() {
+        UpdateChecker.check { [weak self] update in
+            Task { @MainActor in self?.availableUpdate = update }
+        }
+    }
+
+    func openUpdateNotes() {
+        guard let update = availableUpdate else { return }
+        Analytics.track("update_notes_opened", ["latest_version": update.version])
+        NSWorkspace.shared.open(update.url)
+    }
+
+    func copyBrewCommand() {
+        guard let update = availableUpdate else { return }
+        Analytics.track("update_brew_copied", ["latest_version": update.version])
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(UpdateChecker.brewCommand, forType: .string)
+    }
+
+    func dismissUpdate() {
+        guard let update = availableUpdate else { return }
+        Analytics.track("update_dismissed", ["latest_version": update.version])
+        UpdateChecker.dismissedVersion = update.version
+        availableUpdate = nil
     }
 
     func refreshPermission() {
+        let wasNeeded = needsAccessibility
         if mode == .hold, !holdMonitor.isRunning, HoldMonitor.hasPermission {
             applyBinding()
         }
         needsAccessibility = mode == .hold && !HoldMonitor.hasPermission
+        if wasNeeded && !needsAccessibility { Analytics.track("accessibility_granted") }
         updatePermissionPoll()
     }
 
@@ -174,6 +312,7 @@ final class MenuBarViewModel: ObservableObject {
     private func resetStaleGrant() {
         guard !staleGrantHandled else { return }
         staleGrantHandled = true
+        Analytics.track("accessibility_stale_reset")
         let reset = Process()
         reset.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
         reset.arguments = ["reset", "Accessibility", Bundle.main.bundleIdentifier ?? "com.ugurcandede.sotto"]
@@ -184,13 +323,17 @@ final class MenuBarViewModel: ObservableObject {
     }
 
     func openAccessibilitySettings() {
+        Analytics.track("accessibility_settings_opened")
         permissionPollTicks = 0
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
         NSWorkspace.shared.open(url)
     }
 
     private func refresh() {
-        if coordinator.holdActive != holdActive { holdStateChanged(coordinator.holdActive) }
+        if coordinator.holdActive != holdActive {
+            recordHold(coordinator.holdActive)
+            holdStateChanged(coordinator.holdActive)
+        }
         if muted != coordinator.effectiveMute { pulseTrigger += 1 }
         muted = coordinator.effectiveMute
         baseMuted = coordinator.baseMuted
@@ -201,6 +344,14 @@ final class MenuBarViewModel: ObservableObject {
         selectedInput = coordinator.audio.device?.uid ?? ""
         inputVolume = coordinator.audio.inputVolume
         canAdjustVolume = coordinator.audio.canAdjustVolume
+
+        // Sends the mute strategy the new device needs, never its name or UID.
+        if selectedInput != lastTrackedInput {
+            if lastTrackedInput != nil {
+                Analytics.track("device_changed", ["strategy": strategyName, "supported": deviceSupported])
+            }
+            lastTrackedInput = selectedInput
+        }
     }
 
     private func modeChanged() {
@@ -229,6 +380,7 @@ final class MenuBarViewModel: ObservableObject {
             toggleHotkey.register(key)
         case .hold:
             needsAccessibility = !holdMonitor.start(key: key)
+            if needsAccessibility { Analytics.track("accessibility_needed") }
             if !needsAccessibility { Settings.hadAccessibility = true }
         }
         updatePermissionPoll()

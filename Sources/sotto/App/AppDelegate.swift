@@ -9,13 +9,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         statusItem = StatusItemController(viewModel: viewModel)
         installTerminationHandlers()
-        Analytics.start()
+        // The heartbeat timer runs on the main run loop, so the view model is safe to touch.
+        Analytics.start { [viewModel] in MainActor.assumeIsolated { viewModel.heartbeatParams() } }
+        viewModel.refreshUserProperties()
+        viewModel.checkForUpdates()
+        updateTimer = Timer.scheduledTimer(withTimeInterval: 24 * 3600, repeats: true) { [viewModel] _ in
+            MainActor.assumeIsolated { viewModel.checkForUpdates() }
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         viewModel.releaseHold()
         viewModel.releaseMicKey()
+        Analytics.appWillTerminate()
     }
+
+    private var updateTimer: Timer?
 
     /// A crash or `kill` while the hold key is down must not leave the mic in
     /// the inverted state.

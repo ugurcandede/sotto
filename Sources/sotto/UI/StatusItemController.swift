@@ -35,7 +35,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         if isRightClick || viewModel.mode == .hold {
             togglePopover()
         } else {
-            viewModel.toggle()
+            viewModel.toggle(source: "menubar_click")
         }
     }
 
