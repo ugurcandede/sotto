@@ -95,10 +95,9 @@ Accessibility. sotto asks only when you switch the mode on.
 
 ### Usage stats
 
-sotto sends anonymous usage events to Google Analytics: a random install
-id, the app version and which mode you use (toggle or push-to-talk). Nothing
-else — **no audio, no keys, no device names.** Turn it off any time by unchecking
-**send anonymous usage stats** in the menu.
+sotto sends anonymous usage events to Google Analytics — which features you
+use and how, with a random install id. **No audio, no keys, no device names.**
+Turn it off any time by unchecking **send anonymous usage stats** in the menu.
 
 ### Menu bar icon
 
