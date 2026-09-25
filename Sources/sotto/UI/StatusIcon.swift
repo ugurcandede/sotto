@@ -13,7 +13,7 @@ struct StatusIcon: View {
 
     private var color: Color {
         if viewModel.muted { return .red }
-        return viewModel.holdActive ? .accentColor : .primary
+        return viewModel.holdActive ? .green : .primary
     }
 
     var body: some View {
