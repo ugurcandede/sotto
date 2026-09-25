@@ -41,7 +41,7 @@ struct MenuView: View {
         HStack(spacing: 10) {
             Image(systemName: viewModel.muted ? "mic.slash.fill" : "mic.fill")
                 .font(.system(size: 20))
-                .foregroundStyle(viewModel.muted ? Color.red : Color.accentColor)
+                .foregroundStyle(viewModel.muted ? Color.red : Color.green)
                 .frame(width: 26)
 
             VStack(alignment: .leading, spacing: 1) {

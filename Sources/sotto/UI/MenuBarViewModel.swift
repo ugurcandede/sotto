@@ -57,6 +57,9 @@ final class MenuBarViewModel: ObservableObject {
     }
 
     @Published private(set) var availableUpdate: AppUpdate?
+    @Published private(set) var updateState: UpdateState = .idle
+
+    enum UpdateState { case idle, updating, notInBrewYet, failed }
     private var updateBannerTrackedVersion: String?
 
     // Analytics: activity since the last heartbeat. Push-to-talk can fire
@@ -239,17 +242,31 @@ final class MenuBarViewModel: ObservableObject {
         }
     }
 
-    func openUpdateNotes() {
-        guard let update = availableUpdate else { return }
-        Analytics.track("update_notes_opened", ["latest_version": update.version])
-        NSWorkspace.shared.open(update.url)
+    /// Homebrew installs upgrade in place (brew quits and relaunches us);
+    /// anything else gets the release page.
+    func performUpdate() {
+        guard let update = availableUpdate, updateState != .updating else { return }
+        guard let prefix = UpdateChecker.brewPrefix else {
+            Analytics.track("update_started", ["latest_version": update.version, "result": "release_page"])
+            NSWorkspace.shared.open(update.url)
+            return
+        }
+        Analytics.track("update_started", ["latest_version": update.version, "result": "brew"])
+        Analytics.flush() // brew is about to quit us
+        updateState = .updating
+        UpdateChecker.upgrade(prefix: prefix) { [weak self] upToDate in
+            Task { @MainActor in
+                self?.updateState = upToDate ? .notInBrewYet : .failed
+                Analytics.track("update_failed", [
+                    "latest_version": update.version,
+                    "reason": upToDate ? "not_in_brew_yet" : "brew_error",
+                ])
+            }
+        }
     }
 
-    func copyBrewCommand() {
-        guard let update = availableUpdate else { return }
-        Analytics.track("update_brew_copied", ["latest_version": update.version])
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(UpdateChecker.brewCommand, forType: .string)
+    func openUpdateLog() {
+        NSWorkspace.shared.open(UpdateChecker.logURL)
     }
 
     func dismissUpdate() {
