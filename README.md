@@ -106,6 +106,8 @@ Turn it off any time by unchecking **send anonymous usage stats** in the menu.
 | `mic` | your microphone is live |
 | `mic.slash`, red | muted |
 | `mic.badge.xmark` | this input device can't be muted |
+| `mic.circle`, green | push to talk: you're holding the key, the mic is live |
+| `mic.slash.circle`, red | push to talk: muted until you hold the key |
 
 Every state change pulses the icon twice, then settles. The glyph is driven by
 CoreAudio property listeners, so a change made in System Settings or another

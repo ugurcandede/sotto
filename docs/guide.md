@@ -13,6 +13,8 @@ description: How to use sotto
 | `mic` | your microphone is live |
 | `mic.slash`, red | muted |
 | `mic.badge.xmark` | this input device can't be muted |
+| `mic.circle`, green | push to talk: you're holding the key, the mic is live |
+| `mic.slash.circle`, red | push to talk: muted until you hold the key |
 
 **Left click** toggles mute. **Right click** opens the menu. Every state change
 pulses the icon twice, so a change catches your eye without being noisy.
@@ -72,7 +74,7 @@ as you hold, so you can see you are live.
 Seeing a key's release means watching keys system-wide, so switching this
 mode on asks for **Accessibility** — the only grant in the app. While sotto
 owns the talk key it swallows it, so holding it never types into the app you
-are in. If a release ever gets lost (a sleep, a display change), a 30-second
+are in. If a release ever gets lost (a sleep, a display change), a two-minute
 failsafe closes the mic on its own.
 
 ## On-screen feedback
